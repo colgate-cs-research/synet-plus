@@ -57,7 +57,7 @@ class DuplicateAddressError(Exception):
 
 class ConnectedSyn(object):
     def __init__(self, reqs, network_graph, full=False,
-                 start_net=u'10.0.0.0', prefix_len=31,
+                 start_net=u'10.0.0.2', prefix_len=31,
                  start_loopback=u'192.168.0.0', loopback_prefix_len=24):
         if not reqs:
             reqs = []

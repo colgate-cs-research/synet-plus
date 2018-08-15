@@ -164,7 +164,7 @@ def gen_simple(topo, ospf_reqs, all_communities):
         print "REQ PATH", req
         print 'X' * 50
         egress = req.path[-1]
-        peer = "Peer%s_%d" % (egress, index)
+        peer = "x%s_%d" % (egress[:6], index)
         topo.add_peer(peer)
         peer_asnum += 10
         topo.set_bgp_asnum(peer, peer_asnum)
@@ -223,7 +223,7 @@ def gen_order(topo, ospf_reqs, all_communities):
     for index, req in enumerate(ospf_reqs):
         subg = nx.DiGraph()
         egress = req.paths[0].path[-1]
-        peer = "Peer%s_%d" % (egress, index)
+        peer = "x%s_%d" % (egress[:6], index)
         topo.add_peer(peer)
         peer_asnum += 10
         topo.set_bgp_asnum(peer, peer_asnum)
@@ -345,7 +345,7 @@ def gen_kconnected(topo, ospf_reqs, all_communities):
     subg = nx.DiGraph()
     for index, req in enumerate(ospf_reqs):
         egress = req.paths[0].path[-1]
-        peer = "Peer%s_%d" % (egress, index)
+        peer = "x%s_%d" % (egress[:6], index)
         topo.add_peer(peer)
         peer_asnum += 10
         topo.set_bgp_asnum(peer, peer_asnum)
@@ -416,7 +416,7 @@ def gen_ecmp2(topo, ospf_reqs, all_communities):
     for index, req in enumerate(ospf_reqs):
         subg = nx.DiGraph()
         egress = req.paths[0].path[-1]
-        peer = "Peer%s_%d" % (egress, index)
+        peer = "x%s_%d" % (egress[:6], index)
         subg.add_edge(egress, peer)
         topo.add_peer(peer)
         peer_asnum += 10
@@ -502,7 +502,7 @@ def gen_ecmp(topo, ospf_reqs, all_communities):
     for index, req in enumerate(ospf_reqs):
         subg = nx.DiGraph()
         egress = req.paths[0].path[-1]
-        peer = "Peer%s_%d" % (egress, index)
+        peer = "x%s_%d" % (egress[:6], index)
         topo.add_peer(peer)
         peer_asnum += 10
         topo.set_bgp_asnum(peer, peer_asnum)
@@ -630,7 +630,7 @@ def gen_simple_abs(topo, ospf_reqs, all_communities, partially_evaluated, inv_pr
     for index, req in enumerate(ospf_reqs):
 
         egress = req.path[-1]
-        peer = "Peer%s_%d" % (egress, index)
+        peer = "x%s_%d" % (egress[:6], index)
         topo.add_peer(peer)
         peer_asnum += 10
         topo.set_bgp_asnum(peer, peer_asnum)
@@ -701,7 +701,7 @@ def gen_order_abs(topo, ospf_reqs, all_communities, partially_evaluated, inv_pre
     for index, req in enumerate(ospf_reqs):
 
         egress = req.paths[0].path[-1]
-        peer = "Peer%s_%d" % (egress, index)
+        peer = "Peer%s_%d" % (egress[:6], index)
         topo.add_peer(peer)
         peer_asnum += 10
         topo.set_bgp_asnum(peer, peer_asnum)
@@ -1086,7 +1086,7 @@ def main():
     from tekton.gns3 import GNS3Topo
     gns3 = GNS3Topo(topo)
 
-    out_dir = 'out-configs/%s_%d' % (out_name, rand.randint(0, 1000))
+    out_dir = 'out-configs/%s' % out_name
     print "Writing configs to:", out_dir
     gns3.write_configs(out_dir)
 
