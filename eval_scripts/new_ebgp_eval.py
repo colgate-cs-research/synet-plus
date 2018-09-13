@@ -701,7 +701,7 @@ def gen_order_abs(topo, ospf_reqs, all_communities, partially_evaluated, inv_pre
     for index, req in enumerate(sorted(ospf_reqs, key=lambda x: x.dst_net)):
 
         egress = req.paths[0].path[-1]
-        peer = "Peer%s_%d" % (egress[:6], index)
+        peer = "x%s_%d" % (egress[:6], index)
         topo.add_peer(peer)
         peer_asnum += 10
         topo.set_bgp_asnum(peer, peer_asnum)
@@ -751,6 +751,7 @@ def gen_order_abs(topo, ospf_reqs, all_communities, partially_evaluated, inv_pre
                     match_ip = MatchIpPrefixListList(ip_list)
                     match_next_hop = MatchNextHop(VALUENOTSET)
                     match = MatchSelectOne([match_comms, match_ip, match_next_hop])
+                    #match = MatchSelectOne([match_ip])
                     line1 = RouteMapLine(matches=[match], actions=[ActionSetLocalPref(VALUENOTSET), ActionSetCommunity([VALUENOTSET])], access=VALUENOTSET, lineno=10)
                     line_deny = RouteMapLine(matches=None, actions=None, access=Access.deny, lineno=100)
                     rmap = RouteMap(rname, lines=[line1, line_deny])
@@ -959,6 +960,15 @@ def make_symbolic_attrs(rmap):
         new_lines.append(make_symb_line(line))
     return new_lines
 
+def write_reqs(reqs, out_dir):
+    reach_reqs = []
+    for req in reqs:
+        if isinstance(req, PathOrderReq):
+            reach_reqs.append([pathreq.path[:-1] for pathreq in req.paths])
+
+    with open('%s/policies.txt' % out_dir, 'w') as rf:
+        rf.write('%s' % reach_reqs)
+
 
 def main():
     #setup_logging()
@@ -1097,6 +1107,9 @@ def main():
     out_dir = 'out-configs/%s' % out_name
     print "Writing configs to:", out_dir
     gns3.write_configs(out_dir)
+
+    write_reqs(all_reqs, out_dir)
+
 
     if sketch_type == 'abs' and fixed == 0:
         serialized_route_maps = {}
