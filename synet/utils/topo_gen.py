@@ -120,6 +120,8 @@ def read_topology_zoo(filename):
         label = str(graphml.node[node]['label'])
         # remove whitespaces
         label = label.replace(' ', 'TT')
+        label = label.replace('/', '_')
+        label = label.replace('-', '_')
         if label == 'None':
             label = 'NodeID%s' % node
         if g.has_node(label):
@@ -143,6 +145,7 @@ def read_topology_zoo_netgraph(filename):
         # remove whitespaces
         label = label.replace(' ', 'TT')
         label = label.replace('/', '_')
+        label = label.replace('-', '_')
         if label == 'None':
             label = 'NodeID%s' % node
         if g.has_node(label):
