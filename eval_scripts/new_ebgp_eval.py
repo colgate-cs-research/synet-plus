@@ -711,7 +711,9 @@ def gen_order_abs(topo, ospf_reqs, all_communities, partially_evaluated, inv_pre
 
         peer_comm = all_communities[index]
         set_comm = ActionSetCommunity([peer_comm])
-        line = RouteMapLine(matches=None, actions=[set_comm], access=VALUENOTSET, lineno=10)
+        #line = RouteMapLine(matches=None, actions=[set_comm], access=VALUENOTSET, lineno=10)
+        # HACK: Don't set community
+        line = RouteMapLine(matches=None, actions=[], access=VALUENOTSET, lineno=10)
         syn_vals.append(partial(set_access, line=line, access=Access.permit))
         rname = "RMap_%s_from_%s" % (egress, peer)
         rmap = RouteMap(rname, lines=[line])
@@ -731,10 +733,16 @@ def gen_order_abs(topo, ospf_reqs, all_communities, partially_evaluated, inv_pre
         bgp_req = PathOrderReq(Protocols.BGP, prefix, [PathReq(Protocols.BGP, prefix, tmp.path + [peer], False) for tmp in req.paths], False)
         all_reqs.append(bgp_req)
 
+        print(req)
+
         for subreq in req.paths:
+            print(subreq)
             for node in subreq.path:
+                print(node)
                 for _, neighbor in topo.out_edges(node):
+                    print(neighbor)
                     if neighbor in subreq.path:
+                        print("SKIP")
                         continue
                     rname = "RMap_%s_from_%s" % (neighbor, node)
                     if rname in partially_evaluated:
@@ -743,20 +751,32 @@ def gen_order_abs(topo, ospf_reqs, all_communities, partially_evaluated, inv_pre
                         topo.add_bgp_import_route_map(neighbor, node, rname)
                         comm_lists[node].next()
                         continue
-                    clist = CommunityList(comm_lists[node].next(), Access.permit, [VALUENOTSET, VALUENOTSET, VALUENOTSET])
-                    topo.add_bgp_community_list(node, clist)
-                    match_comms = MatchCommunitiesList(clist)
-                    ip_list = IpPrefixList(name='IpL_%s_%s' % (neighbor, node), access=Access.permit, networks=[VALUENOTSET])
+#                    clist = CommunityList(comm_lists[node].next(), Access.permit, [VALUENOTSET, VALUENOTSET, VALUENOTSET])
+#                    topo.add_bgp_community_list(node, clist)
+#                    match_comms = MatchCommunitiesList(clist)
+                    ip_list = IpPrefixList(name='IpL_%s_%s_%s' % (neighbor, node, peer), access=Access.permit, networks=[VALUENOTSET])
                     topo.add_ip_prefix_list(neighbor, ip_list)
                     match_ip = MatchIpPrefixListList(ip_list)
-                    match_next_hop = MatchNextHop(VALUENOTSET)
-                    match = MatchSelectOne([match_comms, match_ip, match_next_hop])
-                    #match = MatchSelectOne([match_ip])
-                    line1 = RouteMapLine(matches=[match], actions=[ActionSetLocalPref(VALUENOTSET), ActionSetCommunity([VALUENOTSET])], access=VALUENOTSET, lineno=10)
-                    line_deny = RouteMapLine(matches=None, actions=None, access=Access.deny, lineno=100)
-                    rmap = RouteMap(rname, lines=[line1, line_deny])
-                    topo.add_route_map(neighbor, rmap)
-                    topo.add_bgp_import_route_map(neighbor, node, rname)
+#                    match_next_hop = MatchNextHop(VALUENOTSET)
+                    #match = MatchSelectOne([match_comms, match_ip, match_next_hop])
+                    # HACK: only match prefix
+                    match = MatchSelectOne([match_ip])
+#                    line1 = RouteMapLine(matches=[match], actions=[ActionSetLocalPref(VALUENOTSET), ActionSetCommunity([VALUENOTSET])], access=VALUENOTSET, lineno=10)
+                    # HACK: Do not set community
+                    line1 = RouteMapLine(matches=[match], actions=[ActionSetLocalPref(VALUENOTSET)], access=VALUENOTSET, lineno=1)
+
+                    # Add line to existing rmap or add rmap
+                    if rname in topo.get_route_maps(neighbor):
+                        rmap = topo.get_route_maps(neighbor)[rname]
+                        line1._lineno = rmap.lines[-2].lineno + 1
+                        rmap.lines[-1:-1] = [line1]
+                        print(rmap)
+                    else:
+                        line_deny = RouteMapLine(matches=None, actions=None, access=Access.deny, lineno=100)
+                        rmap = RouteMap(rname, lines=[line1, line_deny])
+                        topo.add_route_map(neighbor, rmap)
+                        topo.add_bgp_import_route_map(neighbor, node, rname)
+                        print(rmap)
     return all_reqs
 
 
