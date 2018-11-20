@@ -1427,7 +1427,7 @@ class SMTActions(SMTAbstractAction):
 
         def _gather_communities(comms, index):
             prev_action = self.actions[index]
-            assert isinstance(prev_action, ActionSetCommunity)
+            assert isinstance(prev_action, ActionSetCommunity), "Found: {}".format(self.actions)
             action = ActionSetCommunity(communities=comms,
                                         additive=prev_action.additive)
             return action
@@ -1439,7 +1439,7 @@ class SMTActions(SMTAbstractAction):
             else:
                 # Close other communities
                 if communities:
-                    comms = _gather_communities(communities, index)
+                    comms = _gather_communities(communities, index - 1)
                     configs.append(comms)
                     communities = []
                 configs.append(config)
@@ -1582,7 +1582,7 @@ class SMTRouteMapLine(SMTAbstractAction):
 
     def __str__(self):
         return "SMTRouteMapLine(matches=%s, actions=%s, access=%s, lineno=%s)" % (
-            self.smt_match, self.line.actions, self.line.actions, self.line
+            self.smt_match, self.line.actions, self.line.access, self.line.lineno
         )
 
 
