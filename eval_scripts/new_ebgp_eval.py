@@ -211,7 +211,8 @@ def setup_bgp(topo, ospf_reqs, all_communities):
         peer_comm = all_communities[index]
         set_comm = ActionSetCommunity([peer_comm])
         set_pref = ActionSetLocalPref(VALUENOTSET)
-        line = RouteMapLine(matches=[], actions=[set_comm, set_pref], access=VALUENOTSET, lineno=10)
+        #line = RouteMapLine(matches=[], actions=[set_comm, set_pref], access=VALUENOTSET, lineno=10)
+        line = RouteMapLine(matches=[], actions=[set_pref], access=VALUENOTSET, lineno=10)
         syn_vals.append(partial(set_access, line=line, access=Access.permit))
         rname = "RMap_External_%s_from_%s" % (egress, peer)
         rmap = RouteMap(rname, lines=[line])
@@ -822,19 +823,22 @@ def gen_order_abs(topo, ospf_reqs, all_communities, partially_evaluated, inv_pre
             else:
                 lines = []
                 lineno_gen = itertools.count(10, step=10)
-                for _ in range(import_degree[node][neighbor]):
+                for i in range(import_degree[node][neighbor]):
                     clist = CommunityList(comm_list_id_gen[node].next(), Access.permit,
                                           [VALUENOTSET, VALUENOTSET, VALUENOTSET])
                     topo.add_bgp_community_list(node, clist)
                     match_comms = MatchCommunitiesList(clist)
-                    ip_list = IpPrefixList(name='IpL_%s_%s' % (neighbor, node), access=Access.permit,
+                    ip_list = IpPrefixList(name='IpL_%s_%s_%d' % (neighbor, node, i), access=Access.permit,
                                            networks=[VALUENOTSET])
                     topo.add_ip_prefix_list(neighbor, ip_list)
                     match_ip = MatchIpPrefixListList(ip_list)
                     match_next_hop = MatchNextHop(VALUENOTSET)
-                    match = MatchSelectOne([match_comms, match_ip, match_next_hop])
+                    #match = MatchSelectOne([match_comms, match_ip, match_next_hop])
+                    match = MatchSelectOne([match_ip])
+#                    actions = [ActionSetLocalPref(VALUENOTSET), ActionSetCommunity([VALUENOTSET])]
+                    actions = [ActionSetLocalPref(VALUENOTSET)]
                     line = RouteMapLine(matches=[match],
-                                        actions=[ActionSetLocalPref(VALUENOTSET), ActionSetCommunity([VALUENOTSET])],
+                                        actions= actions,
                                         access=VALUENOTSET, lineno=lineno_gen.next())
                     lines.append(line)
                 line_deny = RouteMapLine(matches=None, actions=None, access=Access.deny, lineno=lineno_gen.next())
@@ -1046,14 +1050,20 @@ def make_symbolic_attrs(rmap):
         new_lines.append(make_symb_line(line))
     return new_lines
 
-def write_reqs(reqs, out_dir):
-    reach_reqs = []
+def write_reqs(reqs, out_dir, prefixes, gns3):
+    policies = []
     for req in reqs:
         if isinstance(req, PathOrderReq):
-            reach_reqs.append([pathreq.path[:-1] for pathreq in req.paths])
+            paths = [[gns3.shortnodes[node] for node in pathreq.path] for pathreq in req.paths]
+            #paths = [pathreq.path[:-1] for pathreq in req.paths]
+            source = paths[0][0]
+            target = paths[0][-1]
+            flow = prefixes['P_%s' % req.paths[0].path[-1]]
+            policies.append({'type' : 'path-preference', 'source' : source, 
+                    'target' : target, 'paths' : paths, 'flow' : str(flow)})
 
-    with open('%s/policies.txt' % out_dir, 'w') as rf:
-        rf.write('%s' % reach_reqs)
+    with open('%s/policies.json' % out_dir, 'w') as rf:
+        rf.write(json.dumps({'policies' : policies}, indent=4))
 
 
 def main():
@@ -1194,7 +1204,7 @@ def main():
     print "Writing configs to:", out_dir
     gns3.write_configs(out_dir)
 
-    write_reqs(all_reqs, out_dir)
+    write_reqs(all_reqs, out_dir, prefix_map, gns3)
 
 
     if sketch_type == 'abs' and fixed == 0:
