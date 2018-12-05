@@ -19,7 +19,8 @@ do
     fixed="0"
     sketch="abs"
     RUN_ID=1
-    for reqs in 1 2 4 8 16;
+    #for reqs in 1 2 4 8 16;
+    for reqs in 4 8 16;
     do
         echo $topo $values $req_type $reqs $fixed $sketch $RUN_ID
     done
