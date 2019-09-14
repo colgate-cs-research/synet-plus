@@ -1046,6 +1046,14 @@ def make_symbolic_attrs(rmap):
         new_lines.append(make_symb_line(line))
     return new_lines
 
+def write_reqs(reqs, out_dir):
+    reach_reqs = []
+    for req in reqs:
+        if isinstance(req, PathOrderReq):
+            reach_reqs.append([pathreq.path[:-1] for pathreq in req.paths])
+
+    with open('%s/policies.txt' % out_dir, 'w') as rf:
+        rf.write('%s' % reach_reqs)
 
 def main():
     #setup_logging()
@@ -1180,9 +1188,11 @@ def main():
         prefix_map[prefix] = net
         print("Prefix {}: {}".format(prefix, net))
     gns3 = GNS3Topo(topo, prefix_map=prefix_map)
-    out_dir = 'out-configs/%s_%d' % (out_name, rand.randint(0, 1000))
+    out_dir = 'out-configs/%s' % (out_name)
     print "Writing configs to:", out_dir
     gns3.write_configs(out_dir)
+
+    write_reqs(all_reqs, out_dir)
 
     if sketch_type == 'abs' and fixed == 0:
         serialized_route_maps = {}
