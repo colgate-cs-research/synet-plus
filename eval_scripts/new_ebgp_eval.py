@@ -832,7 +832,8 @@ def gen_order_abs(topo, ospf_reqs, all_communities, partially_evaluated, inv_pre
                     topo.add_ip_prefix_list(neighbor, ip_list)
                     match_ip = MatchIpPrefixListList(ip_list)
                     match_next_hop = MatchNextHop(VALUENOTSET)
-                    match = MatchSelectOne([match_comms, match_ip, match_next_hop])
+                    #match = MatchSelectOne([match_comms, match_ip, match_next_hop])
+                    match = MatchSelectOne([match_ip])
                     line = RouteMapLine(matches=[match],
                                         actions=[ActionSetLocalPref(VALUENOTSET), ActionSetCommunity([VALUENOTSET])],
                                         access=VALUENOTSET, lineno=lineno_gen.next())
